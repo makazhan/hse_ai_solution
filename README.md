@@ -16,7 +16,7 @@
 
 ## Документация (на предмет соответствия целям и задачам хакатона)
 
-- Презентация [docs/TB-Expert_AI_Safety.pdf](docs/PROPOSAL.md)
+- Презентация [docs/TB-Expert_AI_Safety.pdf](docs/TB-Expert_AI_Safety.pdf)
 - Обоснование актуальности системы и оценка перспектив внедрения приведены в [docs/PROPOSAL.md](docs/PROPOSAL.md).
 
 ---
