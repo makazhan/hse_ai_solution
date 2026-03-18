@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ТБ Эксперт</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* ── Сброс и база ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f0f2f5; color: #1a1a2e; line-height: 1.5;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        /* ── Шапка и навигация ── */
+        header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff; padding: 0 2rem;
+            display: flex; align-items: center; gap: 1.5rem;
+            height: 56px; position: sticky; top: 0; z-index: 100;
+        }
+        .logo { font-size: 1.15rem; font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: .5rem; }
+        nav { display: flex; gap: 0.25rem; margin-left: 1.5rem; }
+        .nav-link {
+            padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;
+            font-weight: 500; color: rgba(255,255,255,0.7); transition: all 0.2s;
+        }
+        .nav-link:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .nav-link.active { color: #fff; background: rgba(255,255,255,0.18); }
+
+        /* ── Страницы / роутер ── */
+        .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ── Лендинг ── */
+        .hero-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .hero-subtitle { color: #666; margin-bottom: 2rem; }
+        .hero-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .hero-card {
+            background: #fff; border-radius: 12px; padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s; border: 2px solid transparent;
+        }
+        .hero-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .hero-card-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .hero-card h3 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+        .hero-card p { color: #666; font-size: 0.9rem; }
+        .hero-card--data { border-color: #e3f2fd; }
+        .hero-card--data:hover { border-color: #42a5f5; }
+        .hero-card--analytics { border-color: #e8f5e9; }
+        .hero-card--analytics:hover { border-color: #66bb6a; }
+        .hero-card--report { border-color: #fff3e0; }
+        .hero-card--report:hover { border-color: #ffa726; }
+
+        /* ── Фильтры ── */
+        .filters {
+            display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;
+            background: #fff; border-radius: 8px; padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1.5rem;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+        .filter-group label { font-size: 0.8rem; color: #666; font-weight: 500; }
+        .filter-group input, .filter-group select {
+            padding: 0.45rem 0.6rem; border: 1px solid #d0d5dd; border-radius: 6px;
+            font-size: 0.875rem; background: #fff; color: #1a1a2e;
+        }
+        .filter-group select { min-width: 200px; }
+        .filter-group input[type="text"] { min-width: 160px; }
+        .btn {
+            padding: 0.5rem 1.25rem; background: #1a1a2e; color: #fff; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 0.875rem;
+            font-weight: 500; transition: background 0.2s;
+        }
+        .btn:hover { background: #16213e; }
+        .btn:disabled { opacity: 0.5; cursor: default; }
+        .btn-outline { background: transparent; color: #1a1a2e; border: 1px solid #d0d5dd; }
+        .btn-outline:hover { background: #f0f2f5; }
+        .btn-success { background: #2e7d32; }
+        .btn-success:hover { background: #1b5e20; }
+        .btn-upload { background: #1565c0; }
+        .btn-upload:hover { background: #0d47a1; }
+        .btn-ai { background: #6a1b9a; }
+        .btn-ai:hover { background: #4a148c; }
+
+        /* ── KPI-карточки ── */
+        .cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .card {
+            background: #fff; border-radius: 8px; padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .card-label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+        .card-value { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
+        .card-value.danger { color: #dc3545; }
+        .card-value.warning { color: #e67e22; }
+        .card-value.primary { color: #1a1a2e; }
+
+        /* ── Диаграммы ── */
+        .charts {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .chart-box {
+            background: #fff; border-radius: 8px; padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .chart-box h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; color: #333; }
+        .chart-box.full-width { grid-column: 1 / -1; }
+        .chart-wrapper { position: relative; width: 100%; }
+        .chart-wrapper.pie { max-width: 400px; margin: 0 auto; }
+
+        /* ── SVG-карта и тултип ── */
+        .map-container { position: relative; }
+        .map-container svg { width: 100%; height: auto; }
+        .map-container path[data-region] {
+            stroke: #fff; stroke-width: 1.5; cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .map-container path[data-region]:hover { opacity: 0.8; stroke: #333; stroke-width: 2; }
+        .map-container circle.city-dot {
+            fill: #fff; stroke: #333; stroke-width: 1.5; pointer-events: none;
+        }
+        .map-container text.city-label {
+            font-size: 11px; fill: #333; font-weight: 600; pointer-events: none;
+        }
+        .map-tooltip {
+            display: none; position: fixed; background: rgba(26,26,46,0.92); color: #fff;
+            padding: 6px 12px; border-radius: 6px; font-size: 0.82rem;
+            pointer-events: none; z-index: 200; white-space: nowrap;
+        }
+        .map-scale-bar {
+            margin-top: 0.75rem; padding: 0.4rem 1rem;
+        }
+        .map-scale-gradient {
+            width: 100%; height: 14px; border-radius: 3px;
+            background: linear-gradient(to right,
+                rgb(102,187,106) 0%,
+                rgb(255,235,59) 33%,
+                rgb(255,167,38) 66%,
+                rgb(239,83,80) 100%
+            );
+        }
+        .map-scale-labels {
+            display: flex; justify-content: space-between;
+            font-size: 0.8rem; color: #666; margin-top: 0.25rem;
+        }
+
+        /* ── Таблицы ── */
+        .table-section {
+            background: #fff; border-radius: 8px; padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1.5rem;
+        }
+        .table-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;
+        }
+        .table-header h3 { font-size: 0.95rem; font-weight: 600; color: #333; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th {
+            background: #f8f9fa; padding: 0.6rem 0.75rem; text-align: left;
+            font-weight: 600; color: #555; border-bottom: 2px solid #e9ecef; white-space: nowrap;
+        }
+        td {
+            padding: 0.6rem 0.75rem; border-bottom: 1px solid #f0f0f0;
+            max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        tr:hover td { background: #f8f9fa; }
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 0.75rem; margin-top: 1rem; font-size: 0.875rem;
+        }
+        .pagination button {
+            padding: 0.35rem 0.9rem; border: 1px solid #d0d5dd;
+            border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.85rem;
+        }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination button:not(:disabled):hover { background: #f0f2f5; }
+        .loading, .no-data { text-align: center; padding: 2rem; color: #888; }
+        .loading::before {
+            content: '';
+            display: block;
+            width: 32px; height: 32px;
+            margin: 0 auto 0.75rem;
+            border: 3px solid #e0e0e0;
+            border-top-color: #1a1a2e;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-msg {
+            text-align: center; padding: 1rem; color: #dc3545;
+            background: #fff5f5; border-radius: 6px;
+        }
+
+        /* ── Вкладки ── */
+        .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #e9ecef; }
+        .tab-btn {
+            padding: 0.65rem 1.5rem; border: none; background: none; cursor: pointer;
+            font-size: 0.9rem; font-weight: 500; color: #888;
+            border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+        }
+        .tab-btn:hover { color: #1a1a2e; }
+        .tab-btn.active { color: #1a1a2e; border-bottom-color: #1a1a2e; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ── Модальное окно ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 300; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #fff; border-radius: 12px; padding: 2rem;
+            max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+        }
+        .modal h3 { font-size: 1.1rem; margin-bottom: 1rem; }
+        .modal-progress { margin: 1rem 0; }
+        .modal-progress-bar {
+            height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden;
+        }
+        .modal-progress-fill {
+            height: 100%; background: #1565c0; border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .modal-status { font-size: 0.85rem; color: #666; margin-top: 0.5rem; }
+        .modal-results { margin-top: 1rem; }
+        .modal-result-item {
+            padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0;
+            font-size: 0.85rem; display: flex; justify-content: space-between;
+        }
+        .modal-result-item .ok { color: #2e7d32; }
+        .modal-result-item .fail { color: #dc3545; }
+        .modal-summary {
+            display: flex; gap: 1.5rem; margin: 1rem 0;
+            padding: 0.75rem; background: #f8f9fa; border-radius: 6px; font-size: 0.9rem;
+        }
+        .modal-close {
+            margin-top: 1.5rem; padding: 0.5rem 2rem; background: #1a1a2e; color: #fff;
+            border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem;
+        }
+
+        /* ── Отчёт ── */
+        .report-preview {
+            background: #fff; border-radius: 8px; padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-top: 1.5rem;
+            min-height: 200px;
+        }
+        .report-preview h1 { font-size: 1.4rem; margin-bottom: 1rem; }
+        .report-preview h2 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; color: #333; }
+        .report-preview ul { padding-left: 1.5rem; }
+        .report-preview li { margin-bottom: 0.25rem; }
+        .report-actions {
+            display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap;
+        }
+        .report-placeholder {
+            display: flex; align-items: center; justify-content: center;
+            height: 200px; color: #999; font-size: 0.95rem;
+        }
+        .company-checkboxes {
+            display: flex; flex-wrap: wrap; gap: 0.5rem 1rem;
+            padding: 0.5rem 0;
+        }
+        .company-checkboxes label {
+            font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem;
+            cursor: pointer;
+        }
+        .cb-grid {
+            display: flex; gap: 0.75rem; padding: 0.5rem 0;
+        }
+        .cb-grid .cb-items {
+            flex: 1; display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.2rem 0.75rem;
+        }
+        .cb-grid .cb-items label {
+            font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem;
+            cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .cb-grid .cb-toggle {
+            display: flex; flex-direction: column; gap: 0.35rem;
+            justify-content: center; padding-left: 0.75rem;
+            border-left: 1px solid #e0e0e0;
+        }
+        .cb-toggle button {
+            font-size: 0.78rem; color: #4a6fa5; cursor: pointer;
+            background: none; border: 1px solid #ccc; border-radius: 4px;
+            padding: 0.2rem 0.5rem; white-space: nowrap;
+        }
+        .cb-toggle button:hover { background: #f0f2f5; }
+
+        /* ── Адаптив ── */
+        @media (max-width: 900px) {
+            .charts { grid-template-columns: 1fr; }
+            .container { padding: 1rem; }
+            header { padding: 0 1rem; gap: 0.75rem; }
+            nav { margin-left: 0; }
+            .hero-cards { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            header { flex-wrap: wrap; height: auto; padding: 0.75rem 1rem; }
+            nav { width: 100%; overflow-x: auto; }
+            .nav-link { padding: 0.4rem 0.75rem; font-size: 0.8rem; white-space: nowrap; }
+            .filters { flex-direction: column; }
+            .filter-group select { min-width: 100%; }
+            .cards { grid-template-columns: 1fr; }
+            .table-header { flex-direction: column; align-items: flex-start; }
+            .tabs { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Шапка ── -->
+<header>
+    <a class="logo" href="#home">&#9888;&#65039; ТБ Эксперт</a>
+    <nav>
+        <a class="nav-link" href="#home" data-page="home">Главная</a>
+        <a class="nav-link" href="#data" data-page="data">Данные</a>
+        <a class="nav-link" href="#dashboard" data-page="dashboard">Аналитика</a>
+        <a class="nav-link" href="#report" data-page="report">Отчёт</a>
+    </nav>
+</header>
+
+<main class="container">
+
+    <!-- ═══════ Лендинг ═══════ -->
+    <section id="page-home" class="page">
+        <h1 class="hero-title">Мониторинг происшествий</h1>
+        <p class="hero-subtitle">Система учёта и анализа инцидентов в области охраны труда</p>
+        <div class="hero-cards">
+            <div class="hero-card hero-card--data" onclick="location.hash='data'">
+                <div class="hero-card-icon">&#128202;</div>
+                <h3>Данные</h3>
+                <p>Журналы происшествий и акты расследования. Загрузка и просмотр документов.</p>
+            </div>
+            <div class="hero-card hero-card--analytics" onclick="location.hash='dashboard'">
+                <div class="hero-card-icon">&#128200;</div>
+                <h3>Аналитика</h3>
+                <p>Интерактивный дашборд со статистикой, диаграммами и картой регионов.</p>
+            </div>
+            <div class="hero-card hero-card--report" onclick="location.hash='report'">
+                <div class="hero-card-icon">&#128196;</div>
+                <h3>Отчёт</h3>
+                <p>Генерация аналитического отчёта с экспортом в формат Word.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════ Данные ═══════ -->
+    <section id="page-data" class="page">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="journals">Журналы</button>
+            <button class="tab-btn" data-tab="acts">Акты</button>
+        </div>
+
+        <!-- Вкладка: Журналы -->
+        <div id="tab-journals" class="tab-content active">
+            <section class="filters" id="journal-filters">
+                <div class="filter-group">
+                    <label>Дата с</label>
+                    <input type="date" id="jf-date-from">
+                </div>
+                <div class="filter-group">
+                    <label>Дата по</label>
+                    <input type="date" id="jf-date-to">
+                </div>
+                <div class="filter-group">
+                    <label>Статус расследования</label>
+                    <select id="jf-status">
+                        <option value="">Все</option>
+                        <option value="Завершено">Завершено</option>
+                        <option value="Не завершено">Не завершено</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Результат расследования</label>
+                    <select id="jf-results">
+                        <option value="">Все</option>
+                        <option value="Связан с трудовой деятельностью">Связан с трудовой деятельностью</option>
+                        <option value="Не связан с трудовой деятельностью">Не связан с трудовой деятельностью</option>
+                    </select>
+                </div>
+                <div class="filter-group" style="flex-basis:100%;">
+                    <label>Компании</label>
+                    <div class="cb-grid" id="jf-company"></div>
+                </div>
+                <div class="filter-group" style="flex-basis:100%;">
+                    <label>Регионы</label>
+                    <div class="cb-grid" id="jf-region"></div>
+                </div>
+                <button class="btn" onclick="applyJournalFilters()">Применить</button>
+                <button class="btn btn-outline" onclick="resetJournalFilters()">Сбросить</button>
+                <button class="btn btn-upload" onclick="document.getElementById('journal-file-input').click()">Загрузить журналы</button>
+                <input type="file" id="journal-file-input" accept=".xlsx,.xls" multiple style="display:none"
+                       onchange="uploadJournals(this.files)">
+            </section>
+            <section class="table-section">
+                <div class="table-header">
+                    <h3>Журнал происшествий</h3>
+                    <span id="j-table-total" style="font-size:0.85rem;color:#666;"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr>
+                            <th>Дата</th><th>Компания</th><th>Регион</th><th>Вид</th>
+                            <th>ДЗО</th><th>Травма</th><th>Статус</th>
+                        </tr></thead>
+                        <tbody id="j-tbody"><tr><td colspan="7" class="loading">Загрузка...</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <button id="j-btn-prev" onclick="journalPrevPage()" disabled>&larr; Назад</button>
+                    <span id="j-page-info">&mdash;</span>
+                    <button id="j-btn-next" onclick="journalNextPage()" disabled>Вперёд &rarr;</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Вкладка: Акты -->
+        <div id="tab-acts" class="tab-content">
+            <section class="filters" id="act-filters">
+                <div class="filter-group">
+                    <label>Дата с</label>
+                    <input type="date" id="af-date-from">
+                </div>
+                <div class="filter-group">
+                    <label>Дата по</label>
+                    <input type="date" id="af-date-to">
+                </div>
+                <div class="filter-group">
+                    <label>Тип акта</label>
+                    <select id="af-act-type"><option value="">Все</option></select>
+                </div>
+                <div class="filter-group" style="flex-basis:100%;">
+                    <label>Компании</label>
+                    <div class="cb-grid" id="af-company"></div>
+                </div>
+                <div class="filter-group" style="flex-basis:100%;">
+                    <label>Регионы</label>
+                    <div class="cb-grid" id="af-region"></div>
+                </div>
+                <button class="btn" onclick="applyActFilters()">Применить</button>
+                <button class="btn btn-outline" onclick="resetActFilters()">Сбросить</button>
+                <button class="btn btn-upload" onclick="document.getElementById('act-file-input').click()">Загрузить акты</button>
+                <input type="file" id="act-file-input" accept=".pdf,.docx" multiple style="display:none"
+                       onchange="uploadActs(this.files)">
+            </section>
+            <section class="table-section">
+                <div class="table-header">
+                    <h3>Акты расследования</h3>
+                    <span id="a-table-total" style="font-size:0.85rem;color:#666;"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr>
+                            <th>Дата акта</th><th>Компания</th><th>Регион</th><th>Пострадавший</th>
+                            <th>Тип акта</th><th>Язык</th>
+                        </tr></thead>
+                        <tbody id="a-tbody"><tr><td colspan="6" class="loading">Загрузка...</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <button id="a-btn-prev" onclick="actPrevPage()" disabled>&larr; Назад</button>
+                    <span id="a-page-info">&mdash;</span>
+                    <button id="a-btn-next" onclick="actNextPage()" disabled>Вперёд &rarr;</button>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- ═══════ Аналитика ═══════ -->
+    <section id="page-dashboard" class="page">
+        <section class="filters" id="dash-filters">
+            <div class="filter-group">
+                <label>Дата с</label>
+                <input type="date" id="df-date-from">
+            </div>
+            <div class="filter-group">
+                <label>Дата по</label>
+                <input type="date" id="df-date-to">
+            </div>
+            <div class="filter-group">
+                <label>Статус расследования</label>
+                <select id="df-status">
+                    <option value="">Все</option>
+                    <option value="Завершено">Завершено</option>
+                    <option value="Не завершено">Не завершено</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Результат расследования</label>
+                <select id="df-results">
+                    <option value="">Все</option>
+                    <option value="Связан с трудовой деятельностью">Связан с трудовой деятельностью</option>
+                    <option value="Не связан с трудовой деятельностью">Не связан с трудовой деятельностью</option>
+                </select>
+            </div>
+            <div class="filter-group" style="flex-basis:100%;">
+                <label>Компании</label>
+                <div class="cb-grid" id="df-company"></div>
+            </div>
+            <div class="filter-group" style="flex-basis:100%;">
+                <label>Регионы</label>
+                <div class="cb-grid" id="df-region"></div>
+            </div>
+            <button class="btn" onclick="applyDashFilters()">Применить</button>
+            <button class="btn btn-outline" onclick="resetDashFilters()">Сбросить</button>
+        </section>
+
+        <section class="cards">
+            <div class="card">
+                <div class="card-label">Всего происшествий</div>
+                <div class="card-value primary" id="kpi-total">&mdash;</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Пострадавших</div>
+                <div class="card-value warning" id="kpi-victims">&mdash;</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Погибших</div>
+                <div class="card-value danger" id="kpi-fatalities">&mdash;</div>
+            </div>
+        </section>
+
+        <section class="charts">
+            <div class="chart-box">
+                <h3>По виду происшествия</h3>
+                <div class="chart-wrapper pie"><canvas id="chart-classification"></canvas></div>
+            </div>
+            <div class="chart-box">
+                <h3>По типу травмы</h3>
+                <div class="chart-wrapper pie"><canvas id="chart-injury"></canvas></div>
+            </div>
+        </section>
+
+        <!-- SVG-карта Казахстана -->
+        <div class="chart-box full-width" style="margin-bottom:1.5rem;">
+            <h3>По регионам</h3>
+            <div class="map-container">
+                <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" id="kz-map">
+                    <path data-region="Карагандинская область" d="M502.8,176.1L501.7,172.7L507.3,173.9L515.4,167.8L521.8,168.0L519.0,186.3L529.6,188.4L534.4,181.5L539.4,185.0L539.4,187.8L549.8,185.9L552.0,187.7L550.9,192.7L553.2,192.7L559.9,189.9L559.0,186.4L564.3,186.7L565.2,179.8L571.7,177.6L581.9,168.1L588.7,171.8L585.9,180.2L595.0,180.8L598.2,174.7L602.1,175.7L601.1,172.0L602.9,169.9L627.1,157.4L621.4,157.4L617.8,152.2L624.8,151.1L637.1,154.7L636.2,162.9L638.5,163.2L634.1,172.4L646.3,172.4L650.2,174.3L650.6,178.9L653.1,176.3L656.5,178.9L657.8,183.4L661.5,185.9L654.1,190.8L657.2,193.8L674.0,186.6L685.2,187.3L687.5,183.5L694.8,185.3L699.1,173.2L704.2,172.3L712.5,176.1L716.8,179.0L715.8,185.1L717.5,189.0L706.2,196.6L706.0,210.8L699.0,210.3L693.5,214.6L703.3,225.8L698.9,226.8L698.8,232.2L708.9,232.0L709.8,235.7L706.0,244.0L701.6,243.6L698.7,246.8L705.9,251.3L703.6,253.5L706.1,256.7L710.0,257.8L703.4,264.9L701.9,271.9L703.8,279.4L699.7,278.5L697.8,285.0L705.6,290.5L707.6,287.4L712.8,287.8L714.8,305.6L704.9,308.1L698.6,304.0L701.0,308.3L681.6,301.8L670.0,302.8L652.8,308.7L637.7,326.0L577.5,325.8L577.0,280.1L578.7,271.5L586.1,276.0L587.6,270.0L595.0,266.8L588.8,249.6L591.3,248.7L592.4,236.7L594.7,235.8L591.0,221.6L585.0,221.8L584.4,219.4L570.4,221.6L565.2,215.2L560.3,214.4L560.5,222.7L557.7,231.9L544.4,233.9L535.5,239.0L529.6,233.9L524.1,233.9L512.1,222.4L502.9,221.4L501.6,213.4L490.9,197.1L496.2,190.4L495.3,186.9L503.4,183.8L506.1,179.8L502.8,176.1Z" fill="#e0e0e0"/>
+                    <path data-region="Актюбинская область" d="M392.8,286.8L384.7,285.1L385.2,282.3L370.2,265.9L357.8,266.1L348.2,289.5L338.7,289.1L338.3,296.1L330.7,296.6L306.4,325.8L307.9,348.4L296.7,339.6L256.0,353.2L253.0,328.5L246.0,309.2L227.5,302.1L217.7,286.5L220.3,267.5L219.8,261.6L216.3,257.0L215.7,236.8L210.0,233.8L205.7,239.0L196.2,235.0L195.4,221.6L192.9,224.0L187.4,219.3L188.8,211.5L206.1,201.9L204.8,200.4L207.8,193.9L203.6,183.4L211.7,173.8L210.9,164.9L207.2,163.6L208.6,160.4L219.5,163.9L218.8,167.3L233.8,176.2L242.7,169.5L243.6,163.4L249.8,162.5L251.0,158.5L255.4,162.3L255.2,158.8L265.8,157.6L272.9,165.4L278.5,164.0L278.7,156.8L287.4,159.3L290.8,156.0L297.3,159.8L298.2,167.7L303.0,171.2L316.3,173.2L318.3,175.1L316.0,175.0L317.0,178.0L323.7,176.6L327.8,172.1L328.1,167.2L332.0,166.7L335.0,172.2L345.6,172.7L359.8,167.7L362.4,153.5L368.6,150.9L371.8,158.4L378.1,158.7L376.9,162.1L381.4,166.2L376.8,167.5L377.0,172.0L381.6,171.6L383.1,178.5L392.9,194.4L392.3,198.2L386.4,197.3L381.6,204.7L382.3,208.7L378.6,210.9L384.0,218.9L379.9,220.6L390.5,232.2L394.4,229.6L396.8,231.7L395.7,237.7L410.9,245.2L422.1,263.5L392.8,286.8Z" fill="#e0e0e0"/>
+                    <path data-region="Западно-Казахстанская область" d="M71.0,255.7L45.0,253.0L30.1,245.9L36.4,228.8L42.4,221.8L36.5,216.0L39.1,198.8L48.4,192.2L47.9,184.3L53.2,179.1L61.9,186.2L68.3,198.6L73.0,200.8L79.7,196.9L83.2,193.7L80.1,191.1L78.0,175.3L75.9,173.5L81.3,174.7L94.7,166.3L92.8,161.8L95.4,157.2L102.5,157.8L115.6,150.4L115.6,147.3L119.7,145.8L120.3,140.1L125.3,142.1L124.3,135.9L127.1,138.9L135.4,138.8L137.8,140.2L137.8,142.8L134.7,142.8L135.8,145.3L142.8,143.2L143.9,146.6L147.4,145.0L146.4,142.1L148.3,139.1L153.5,139.7L159.4,135.8L163.8,146.4L168.4,144.1L182.9,145.5L187.4,148.4L188.1,153.8L196.8,156.3L202.0,164.7L207.0,166.1L204.7,173.8L208.0,177.3L203.6,183.4L207.8,193.9L204.8,200.4L206.1,201.9L188.8,211.5L188.2,218.1L182.7,225.5L167.0,227.4L167.3,235.1L165.0,234.9L163.7,243.2L146.4,241.2L147.2,237.7L135.2,236.5L130.4,237.5L127.6,242.3L106.5,257.3L94.5,258.6L95.2,261.7L71.0,255.7Z" fill="#e0e0e0"/>
+                    <path data-region="Улытауская область" d="M577.5,325.8L486.0,326.0L485.1,321.3L450.9,319.1L441.1,310.4L400.6,294.1L398.5,292.1L402.9,289.4L392.8,286.8L422.1,263.5L416.3,254.6L422.2,248.7L421.0,245.0L428.7,243.3L426.3,238.0L431.4,237.9L432.4,229.3L448.7,232.9L454.3,231.3L455.1,227.8L461.7,227.5L490.3,196.3L501.6,213.4L502.9,221.4L512.1,222.4L519.9,231.6L529.6,233.9L535.5,239.0L544.4,233.9L557.7,231.9L560.5,222.7L560.3,214.4L565.2,215.2L570.4,221.6L584.4,219.4L585.0,221.8L591.0,221.6L594.7,235.8L592.4,236.7L591.3,248.7L588.8,249.6L595.0,266.8L587.6,270.0L586.1,276.0L578.7,271.5L577.0,280.1L577.5,325.8Z" fill="#e0e0e0"/>
+                    <path data-region="Туркестанская область" d="M486.0,326.0L527.7,326.1L532.1,333.7L540.6,362.7L544.4,386.7L541.8,391.1L541.2,399.7L535.8,410.7L540.2,416.7L545.4,416.2L551.5,421.8L553.8,428.9L552.8,433.2L565.2,443.0L569.0,449.2L564.5,451.8L562.3,457.4L558.7,454.2L555.6,456.3L549.4,465.1L536.0,472.2L536.2,475.6L530.3,475.9L520.2,491.8L515.7,490.0L518.6,501.3L517.0,505.0L503.7,496.3L507.0,489.5L503.8,490.0L503.4,485.9L475.7,486.1L471.8,461.9L460.0,459.9L460.1,446.0L463.3,447.2L487.1,426.5L501.4,417.9L496.4,412.5L500.0,406.4L500.3,400.4L503.5,400.6L502.4,395.7L505.5,391.1L492.3,379.8L493.5,354.1L485.8,349.1L490.2,334.1L486.0,326.0ZM537.2,442.0L532.9,446.0L536.9,453.8L546.8,448.4L537.2,442.0Z" fill="#e0e0e0"/>
+                    <path data-region="Павлодарская область" d="M754.3,138.0L748.0,142.0L748.8,144.0L746.2,146.5L739.4,145.2L741.9,151.5L726.1,156.7L730.5,165.1L734.8,166.7L736.1,171.9L740.4,171.2L740.1,178.7L742.6,183.7L735.7,192.8L717.9,187.0L715.8,185.1L716.8,179.0L704.2,172.3L697.7,174.8L694.8,185.3L687.5,183.5L685.2,187.3L674.0,186.6L655.0,192.9L654.1,190.8L661.5,185.9L657.8,183.4L656.5,178.9L653.1,176.3L650.6,178.9L650.2,174.3L646.3,172.4L634.1,172.4L638.5,163.2L636.2,162.9L637.1,154.7L629.1,152.2L632.2,146.9L642.1,144.1L636.6,140.2L631.5,140.7L632.2,134.9L637.0,132.0L636.4,110.5L629.1,105.6L634.7,106.9L634.6,103.3L637.2,101.0L636.2,97.7L629.5,102.1L627.8,96.0L625.5,97.5L631.5,90.0L623.8,91.3L623.8,85.8L627.4,86.2L624.0,81.1L629.0,75.3L634.2,74.0L641.8,76.1L644.8,80.4L647.1,76.6L646.5,72.7L650.4,73.4L653.8,68.2L659.5,69.3L668.2,63.4L666.7,60.2L685.0,53.9L686.2,50.7L694.7,51.4L701.0,47.4L697.7,50.1L699.8,52.6L697.2,57.2L690.2,57.0L691.6,61.5L722.5,85.9L754.3,138.0Z" fill="#e0e0e0"/>
+                    <path data-region="Северо-Казахстанская область" d="M624.0,81.1L627.4,86.2L623.8,85.8L623.8,91.3L631.5,90.0L625.6,97.0L629.1,97.7L628.2,101.6L636.2,97.7L637.2,101.0L634.6,103.3L634.7,106.9L629.1,105.6L634.7,108.9L612.4,104.9L611.5,94.6L596.8,95.0L596.8,99.0L590.4,100.2L583.6,94.1L586.1,93.0L586.6,88.5L582.9,81.5L575.8,85.4L570.5,84.6L571.7,81.6L561.1,81.3L561.1,84.5L556.2,88.2L553.4,83.4L548.2,83.5L549.9,78.7L544.7,78.4L543.9,73.4L538.2,73.1L532.9,78.7L526.8,73.2L526.8,75.2L520.2,74.3L521.0,77.2L514.8,80.3L521.4,92.5L517.8,96.4L519.1,102.2L513.0,104.8L511.6,108.4L503.9,110.5L505.3,113.2L501.1,119.4L494.0,114.4L488.7,114.3L488.7,121.6L472.0,119.1L470.9,116.0L465.4,117.5L460.2,114.1L460.5,103.3L462.9,103.2L462.7,99.0L466.9,99.2L467.1,96.4L461.6,96.1L461.2,93.5L468.9,92.5L465.7,89.1L465.6,78.9L462.5,78.9L464.0,68.9L461.1,69.0L459.3,62.5L467.1,59.2L460.8,54.2L464.0,52.8L461.7,41.4L497.3,34.1L500.2,30.5L509.3,30.6L511.1,27.0L508.1,23.0L517.8,23.0L520.7,17.1L526.2,20.1L524.7,15.0L530.6,18.7L542.6,18.2L552.7,24.7L558.4,20.2L566.0,19.9L570.7,26.8L569.3,33.2L570.9,36.9L576.7,40.5L574.0,44.0L574.7,52.2L570.2,51.4L574.2,59.4L576.8,56.4L586.2,59.0L586.8,54.1L596.4,58.5L597.1,56.5L594.2,55.3L595.3,52.5L593.0,50.4L598.5,52.1L598.9,56.4L603.5,57.9L600.5,59.8L601.9,61.0L600.5,64.3L603.0,65.8L604.3,63.2L608.1,64.1L607.3,61.0L604.1,61.1L605.7,58.0L614.2,59.3L615.8,63.0L620.4,64.4L631.3,60.7L629.6,67.2L624.3,66.6L619.9,73.2L619.6,76.8L624.0,81.1Z" fill="#e0e0e0"/>
+                    <path data-region="Мангистауская область" d="M231.5,312.4L235.6,312.8L236.0,317.8L251.0,322.9L256.0,353.2L239.6,359.0L239.6,480.2L227.1,481.6L216.0,460.2L200.4,445.4L173.2,453.9L161.3,465.7L161.1,453.1L166.5,439.7L163.6,433.7L167.0,439.0L167.7,433.7L161.9,430.3L157.9,432.1L155.6,429.0L149.4,430.4L143.9,418.9L135.4,419.9L135.6,406.8L126.6,391.2L125.9,385.5L112.9,379.2L112.3,372.6L113.3,374.0L114.3,370.7L125.5,371.0L131.8,376.4L141.9,375.1L135.4,372.6L129.1,361.7L133.2,357.7L134.7,359.6L135.2,352.5L138.0,348.9L149.5,345.3L179.6,351.7L185.7,348.9L175.8,344.4L173.5,337.3L175.0,335.0L172.3,334.0L188.0,329.2L194.9,318.0L223.6,314.0L228.4,308.9L231.5,312.4Z" fill="#e0e0e0"/>
+                    <path data-region="Кызылординская область" d="M392.8,286.8L402.9,289.4L398.5,292.1L400.6,294.1L441.1,310.4L450.9,319.1L485.6,321.6L485.7,327.5L490.2,334.1L485.8,349.1L493.5,354.1L492.3,379.8L505.5,391.1L502.4,395.7L503.5,400.6L500.3,400.4L500.0,406.4L496.4,412.5L501.4,417.9L461.6,446.7L462.2,426.9L456.6,429.6L450.4,415.4L442.1,408.6L438.1,401.3L427.8,406.1L401.6,403.5L372.0,408.2L352.9,384.5L352.2,380.1L307.9,348.4L306.4,325.8L330.7,296.6L338.3,296.1L338.7,289.1L348.2,289.5L357.6,266.3L370.2,265.9L385.2,282.3L384.7,285.1L392.8,286.8Z" fill="#e0e0e0"/>
+                    <path data-region="Костанайская область" d="M461.7,41.4L464.0,52.8L460.8,54.2L467.1,59.2L459.3,62.5L461.1,69.0L464.0,68.9L462.5,78.9L465.6,78.9L465.7,89.1L468.9,92.5L461.2,93.5L461.6,96.1L467.1,96.4L466.9,99.2L462.7,99.0L462.9,103.2L460.5,103.3L460.0,121.7L457.2,123.8L454.8,132.6L445.8,135.2L446.5,138.8L450.7,140.6L448.2,146.8L450.1,148.1L446.6,150.6L448.6,153.3L447.4,154.6L452.0,158.6L451.4,166.9L459.0,162.7L462.5,168.0L465.4,167.0L467.0,171.7L481.9,172.6L484.5,173.8L485.0,181.6L502.8,176.1L506.1,179.8L503.4,183.8L495.3,186.9L496.2,190.4L490.9,197.1L461.7,227.5L455.1,227.8L454.3,231.3L448.7,232.9L432.4,229.3L431.4,237.9L426.3,238.0L428.7,243.3L421.0,245.0L422.2,248.7L416.3,254.6L410.9,245.2L395.7,237.7L396.8,231.7L394.4,229.6L390.5,232.2L379.9,220.6L384.0,218.9L378.6,210.9L382.3,208.7L381.6,204.7L386.4,197.3L392.3,198.2L392.9,194.4L383.1,178.5L381.6,171.6L377.0,172.0L376.8,167.5L381.4,166.2L376.9,162.1L378.1,158.7L371.8,158.4L368.6,150.9L365.1,152.9L360.9,147.9L349.8,145.9L348.4,141.1L337.0,140.0L335.6,138.6L339.2,135.1L329.1,132.7L327.9,128.6L343.6,123.3L351.3,117.0L349.5,111.7L346.4,111.2L346.4,107.3L343.6,106.6L343.5,103.2L351.5,98.0L350.0,96.2L374.8,95.8L374.5,91.8L364.7,86.7L361.5,88.4L353.8,85.2L355.6,78.7L361.3,79.9L362.0,75.9L347.7,74.7L354.9,69.2L349.8,64.7L356.0,64.9L356.3,60.1L360.4,59.8L362.4,63.6L368.6,61.5L370.4,64.2L372.9,64.2L372.2,61.2L381.1,61.0L383.3,65.4L386.5,59.5L411.5,53.6L415.4,55.8L415.7,52.6L429.5,49.4L437.5,48.5L442.9,51.5L442.8,44.7L449.1,43.7L448.8,40.9L454.5,42.5L459.7,38.9L459.3,41.5L461.7,41.4Z" fill="#e0e0e0"/>
+                    <path data-region="Жетысуйская область" d="M818.9,341.4L824.7,345.1L825.5,351.8L811.0,351.5L807.7,346.3L788.4,354.9L784.3,353.4L777.1,357.7L770.6,357.5L766.0,362.0L768.7,365.9L772.3,364.3L777.7,371.8L776.3,376.1L779.3,399.1L766.8,398.6L759.0,392.7L749.8,397.5L721.3,396.9L719.7,394.5L721.0,391.5L710.3,386.8L710.9,380.8L707.1,380.6L701.1,373.1L698.6,360.4L693.0,357.9L691.1,349.4L686.3,344.1L684.3,336.5L684.5,311.2L685.4,305.0L688.6,303.3L689.1,305.8L693.8,304.1L701.0,308.3L698.6,304.0L704.9,308.1L714.8,305.6L712.8,287.8L721.6,287.5L724.9,283.8L727.7,286.8L731.3,282.2L742.6,291.6L752.4,290.4L759.3,300.4L768.8,295.9L787.7,307.5L793.8,307.6L798.2,311.2L800.4,308.7L799.5,311.8L804.0,309.0L802.5,314.0L810.2,322.7L815.4,337.7L818.9,341.4Z" fill="#e0e0e0"/>
+                    <path data-region="Жамбылская область" d="M637.7,326.0L634.2,334.4L637.1,349.5L630.9,349.5L631.0,355.6L638.3,354.8L639.3,361.9L647.9,368.9L647.9,376.0L665.2,387.1L664.4,397.7L658.4,404.8L667.0,407.3L664.9,417.9L672.9,423.5L670.5,425.5L676.6,426.9L674.2,431.6L652.9,425.2L640.9,416.1L641.0,418.4L635.7,417.6L634.5,420.8L626.4,424.3L623.9,439.8L625.1,444.1L588.3,430.5L576.1,432.4L573.9,438.3L570.3,438.5L572.2,441.9L569.8,441.5L567.3,447.3L552.8,433.2L553.8,428.9L551.5,421.8L545.4,416.2L540.2,416.7L535.8,410.7L541.2,399.7L541.8,391.1L544.4,386.7L540.6,362.7L532.1,333.7L527.7,326.1L637.7,326.0Z" fill="#e0e0e0"/>
+                    <path data-region="Восточно-Казахстанская область" d="M839.1,286.0L841.8,280.1L835.4,273.6L837.4,262.9L843.0,259.8L844.3,252.4L848.3,247.3L840.0,241.7L836.3,234.7L837.3,229.3L830.7,229.8L828.5,223.8L830.2,219.7L814.7,213.7L806.5,204.6L806.3,198.6L797.9,195.5L798.9,190.4L793.7,187.2L799.6,186.6L798.0,183.9L805.6,184.3L806.9,177.7L803.7,169.8L807.8,167.2L825.2,169.7L828.9,163.7L834.3,165.2L837.4,161.0L849.1,162.8L861.9,176.5L864.0,186.8L879.6,192.6L878.5,197.4L883.3,202.7L884.5,207.8L891.9,207.0L905.4,211.9L916.1,200.5L918.2,201.1L918.1,204.3L914.5,208.4L919.1,209.3L923.6,218.9L929.9,219.6L929.2,223.4L920.7,222.8L917.4,226.8L919.0,232.7L913.8,242.4L894.7,248.1L890.5,259.4L894.4,280.6L890.6,291.5L883.6,291.4L877.6,297.6L873.6,293.0L854.8,294.0L839.1,286.0Z" fill="#e0e0e0"/>
+                    <path data-region="Атырауская область" d="M216.6,254.7L220.3,267.5L217.7,286.5L222.7,297.3L227.5,302.1L246.0,309.2L249.9,321.7L236.0,317.8L235.6,312.8L228.4,308.9L223.6,314.0L194.9,318.0L188.0,329.2L176.9,334.3L170.7,333.7L173.3,328.4L169.7,322.0L176.3,312.8L173.9,310.3L174.3,301.5L168.4,304.2L163.7,294.8L164.3,297.0L159.5,298.3L158.5,301.4L143.5,296.8L141.1,298.7L142.8,295.7L138.0,293.6L125.2,295.0L123.2,297.9L122.4,295.8L120.0,299.8L117.6,297.7L112.6,303.1L112.1,300.8L105.8,307.1L104.0,314.0L101.6,313.3L104.6,315.9L103.7,319.5L100.3,313.9L101.5,318.7L94.7,315.0L98.4,318.1L97.1,319.6L80.6,308.2L75.3,307.6L76.8,306.2L73.8,304.0L75.1,302.8L85.3,301.6L74.8,279.6L67.9,270.3L50.4,265.5L49.8,270.7L45.6,268.1L42.4,260.3L45.9,257.5L43.3,256.8L43.7,252.5L82.7,257.3L95.2,261.7L94.5,258.6L106.5,257.3L127.6,242.3L130.4,237.5L135.2,236.5L147.2,237.7L146.4,241.2L163.7,243.2L165.0,234.9L167.3,235.1L167.0,227.4L181.6,226.0L187.4,219.3L192.9,224.0L195.4,221.6L196.2,235.0L205.7,239.0L210.0,233.8L215.7,236.8L216.6,254.7ZM159.2,302.4L159.1,302.5L159.1,302.4L159.2,302.4Z" fill="#e0e0e0"/>
+                    <path data-region="Алматинская область" d="M685.4,305.0L684.5,338.5L691.1,349.4L693.0,357.9L696.6,358.1L699.8,363.0L701.1,373.1L707.1,380.6L710.9,380.8L710.3,386.8L721.0,391.5L719.7,394.5L721.3,396.9L749.8,397.5L759.0,392.7L766.8,398.6L780.2,397.8L785.2,409.4L783.7,414.1L785.8,414.6L786.4,419.1L777.1,423.4L781.9,428.4L774.4,430.6L772.2,437.0L774.6,441.0L773.2,443.7L774.9,450.1L772.5,450.9L767.9,443.5L757.7,442.7L751.1,435.8L751.0,431.3L701.9,425.3L688.1,429.5L670.5,425.5L672.9,423.5L666.0,420.0L664.6,414.5L667.0,407.3L658.4,404.8L664.4,397.7L665.2,387.1L647.9,376.0L647.9,368.9L639.3,361.9L638.3,354.8L631.0,355.6L630.3,351.7L637.1,349.5L634.2,334.4L638.2,324.7L652.8,308.7L670.0,302.8L681.6,301.8L685.4,305.0ZM702.1,411.7L696.8,414.5L697.6,419.6L704.2,423.8L703.9,419.6L705.7,418.7L702.6,416.3L704.7,412.3L702.1,411.7Z" fill="#e0e0e0"/>
+                    <path data-region="Акмолинская область" d="M634.7,108.9L636.4,110.5L637.0,132.0L632.2,134.9L631.5,140.7L636.6,140.2L642.1,144.1L632.2,146.9L629.1,152.2L617.8,152.2L621.4,157.4L627.1,157.4L602.9,169.9L601.1,172.0L602.1,175.7L598.2,174.7L595.0,180.8L585.9,180.2L588.7,171.8L581.9,168.1L571.7,177.6L565.2,179.8L564.3,186.7L559.0,186.4L559.9,189.9L553.2,192.7L550.9,192.7L552.0,187.7L549.8,185.9L539.4,187.8L539.4,185.0L534.4,181.5L529.6,188.4L519.0,186.3L521.8,168.0L515.4,167.8L507.3,173.9L501.7,172.7L502.8,176.1L500.6,177.8L485.0,181.6L484.5,173.8L481.9,172.6L467.0,171.7L465.4,167.0L462.5,168.0L459.0,162.7L451.4,166.9L452.0,158.6L447.4,154.6L448.6,153.3L446.6,150.6L450.1,148.1L448.2,146.8L450.7,140.6L446.5,138.8L445.8,135.2L454.8,132.6L457.2,123.8L460.0,121.7L460.2,114.1L465.4,117.5L470.9,116.0L472.0,119.1L488.7,121.6L488.7,114.3L494.0,114.4L501.1,119.4L505.3,113.2L503.9,110.5L511.6,108.4L513.0,104.8L519.1,102.2L517.8,96.4L521.4,92.5L514.8,80.3L521.0,77.2L520.2,74.3L529.2,73.1L532.9,78.7L538.2,73.1L543.9,73.4L544.7,78.4L549.9,78.7L548.2,83.5L553.4,83.4L556.2,88.2L561.1,84.5L561.1,81.3L571.7,81.6L570.5,84.6L575.8,85.4L582.9,81.5L586.6,88.5L586.1,93.0L583.6,94.1L590.4,100.2L596.8,99.0L596.8,95.0L611.5,94.6L612.4,104.9L634.7,108.9ZM579.0,152.3L575.7,153.9L576.6,160.6L582.3,163.6L582.2,159.8L586.6,158.0L583.4,152.2L579.0,152.3Z" fill="#e0e0e0"/>
+                    <path data-region="Абайская область" d="M803.7,169.8L806.9,177.7L805.6,184.3L798.0,183.9L799.6,186.6L793.7,187.2L798.9,190.4L797.9,195.5L806.3,198.6L806.5,204.6L814.7,213.7L830.2,219.7L828.5,223.8L830.7,229.8L837.3,229.3L836.3,234.7L840.0,241.7L844.1,242.4L848.4,248.1L844.3,252.4L843.0,259.8L837.4,262.9L835.4,273.6L841.8,280.1L839.1,286.0L835.3,286.0L822.8,326.8L820.1,328.1L818.9,341.4L815.4,337.7L810.2,322.7L802.5,314.0L804.0,309.0L799.5,311.8L800.4,308.7L798.2,311.2L793.8,307.6L787.7,307.5L768.8,295.9L759.3,300.4L752.4,290.4L742.6,291.6L731.3,282.2L727.7,286.8L724.9,283.8L721.6,287.5L707.6,287.4L706.3,290.4L697.8,285.0L699.7,278.5L703.8,279.4L701.9,271.9L703.4,264.9L710.0,257.8L706.1,256.7L703.6,253.5L705.9,251.3L698.7,246.8L701.6,243.6L706.0,244.0L709.8,235.7L708.9,232.0L698.8,232.2L698.9,226.8L703.3,225.8L695.2,217.7L693.8,212.7L706.0,210.8L706.2,196.6L717.9,187.0L735.7,192.8L742.6,183.7L740.1,178.7L740.4,171.2L736.1,171.9L734.8,166.7L730.5,165.1L726.2,156.5L741.9,151.5L739.4,145.2L746.2,146.5L748.8,144.0L748.0,142.0L754.3,138.0L770.3,170.0L770.1,166.2L779.3,162.4L778.5,154.5L782.6,154.5L783.6,150.9L793.9,154.4L792.0,163.1L799.8,162.1L800.6,169.4L803.7,169.8Z" fill="#e0e0e0"/>
+                    <circle data-region="Шымкент" cx="540.5" cy="448.0" r="6" class="city-dot"/>
+                    <text class="city-label" x="549.5" y="452.0">Шымкент</text>
+                    <circle data-region="Астана" cx="585.3" cy="150.4" r="6" class="city-dot"/>
+                    <text class="city-label" x="594.3" y="154.4">Астана</text>
+                    <circle data-region="Алматы" cx="701.2" cy="417.1" r="6" class="city-dot"/>
+                    <text class="city-label" x="710.2" y="421.1">Алматы</text>
+                </svg>
+                <div class="map-tooltip" id="map-tooltip"></div>
+            </div>
+            <div class="map-scale-bar" id="map-scale-bar" style="display:none;">
+                <div class="map-scale-gradient"></div>
+                <div class="map-scale-labels">
+                    <span>0</span>
+                    <span id="map-scale-max">0</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════ Отчёт ═══════ -->
+    <section id="page-report" class="page">
+        <section class="filters">
+            <div class="filter-group">
+                <label>Дата с</label>
+                <input type="date" id="rf-date-from">
+            </div>
+            <div class="filter-group">
+                <label>Дата по</label>
+                <input type="date" id="rf-date-to">
+            </div>
+            <button class="btn btn-success" onclick="generateReport()">Сводная статистика</button>
+            <button class="btn btn-ai" onclick="generateAiReport()">AI-отчёт</button>
+            <button class="btn btn-outline" onclick="resetReportFilters()">Сбросить</button>
+        </section>
+        <section class="filters">
+            <div class="filter-group" style="flex-basis:100%;">
+                <label>Компании</label>
+                <div class="cb-grid" id="report-companies"></div>
+            </div>
+            <div class="filter-group" style="flex-basis:100%;">
+                <label>Регионы</label>
+                <div class="cb-grid" id="report-regions"></div>
+            </div>
+        </section>
+        <div class="report-preview" id="report-preview">
+            <div class="report-placeholder">Нажмите «Сводная статистика» для создания отчёта</div>
+        </div>
+        <div class="report-actions" id="report-actions" style="display:none;">
+            <button class="btn btn-success" onclick="exportToWord()">Скачать .docx</button>
+            <button class="btn btn-outline" onclick="copyMarkdown()">Скопировать Markdown</button>
+        </div>
+    </section>
+
+</main>
+
+<!-- Модальное окно -->
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal">
+        <h3 id="modal-title">Загрузка файлов</h3>
+        <div class="modal-progress" id="modal-progress">
+            <div class="modal-progress-bar"><div class="modal-progress-fill" id="modal-progress-fill"></div></div>
+            <div class="modal-status" id="modal-status">Подготовка...</div>
+        </div>
+        <div class="modal-results" id="modal-results" style="display:none;"></div>
+        <button class="modal-close" id="modal-close" onclick="closeModal()" style="display:none;">Закрыть</button>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// Конфиг
+// ═══════════════════════════════════════════════════
+const pagePath = window.location.pathname;
+const API_BASE = pagePath.replace(/\/demo\/?$/, '') + '/v1';
+const PAGE_SIZE = 20;
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
+
+// ═══════════════════════════════════════════════════
+// Перечисления
+// ═══════════════════════════════════════════════════
+const COMPANIES = [
+    'АО «Казахтелеком»','АО «НК «КазМунайГаз»','АО «Казпочта»',
+    'АО «Самрук-Энерго»','АО «НАК «Казатомпром»',
+    'АО «НК «Казахстан темир жолы»','АО «KEGOC»',
+    'АО «НК «QazaqGaz»','АО «НГРК «Тау-Кен Самрук»',
+    "ТОО 'Samruk-Kazyna Ondeu'"
+];
+const REGIONS = [
+    'Восточно-Казахстанская область','Атырауская область','Костанайская область',
+    'Павлодарская область','Туркестанская область','Мангистауская область',
+    'Кызылординская область','Актюбинская область','Алматинская область',
+    'Абайская область','Ближнее зарубежье','Алматы',
+    'Северо-Казахстанская область','Акмолинская область','Астана',
+    'Карагандинская область','Жамбылская область','Западно-Казахстанская область',
+    'Улытауская область','Шымкент','Жетысуйская область'
+];
+const ACT_TYPES = ['Внутреннее расследование','Специальное расследование'];
+const LINK_STATUSES = ['Не привязан','Автоматически привязан','Привязан вручную'];
+const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь',
+    'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+// Цветовые палитры
+const COLORS_9 = ['#3366cc','#dc3912','#ff9900','#109618','#990099','#0099c6','#dd4477','#66aa00','#b82e2e'];
+const COLORS_3 = ['#e67e22','#27ae60','#dc3545'];
+
+// ═══════════════════════════════════════════════════
+// Утилиты
+// ═══════════════════════════════════════════════════
+const qs = sel => document.querySelector(sel);
+const qsa = sel => document.querySelectorAll(sel);
+
+function truncate(s, max) {
+    if (!s) return '\u2014';
+    return s.length > max ? s.slice(0, max) + '\u2026' : s;
+}
+
+function shortLabel(s, max) {
+    if (!s) return '';
+    let t = s.replace(/^АО «НК «/,'').replace(/^АО «НАК «/,'').replace(/^АО «НГРК «/,'')
+             .replace(/^АО «/,'').replace(/^ТОО '/,'').replace(/»$/,'').replace(/'$/,'');
+    return t.length > max ? t.slice(0, max) + '\u2026' : t;
+}
+
+function formatDate(d) {
+    if (!d) return '\u2014';
+    return new Date(d).toLocaleDateString('ru-RU');
+}
+
+function formatMonth(key) {
+    const parts = key.split('-');
+    if (parts.length < 2) return key;
+    return MONTH_NAMES[parseInt(parts[1]) - 1] + ' ' + parts[0];
+}
+
+async function fetchJSON(path, params) {
+    const url = params && params.toString()
+        ? `${API_BASE}${path}?${params}`
+        : `${API_BASE}${path}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+}
+
+function heatColor(count, maxCount) {
+    if (!count || !maxCount) return '#e0e0e0';
+    const t = Math.sqrt(count / maxCount);
+    const stops = [
+        [0.00, [102, 187, 106]],
+        [0.33, [255, 235,  59]],
+        [0.66, [255, 167,  38]],
+        [1.00, [239,  83,  80]]
+    ];
+    let lo = stops[0], hi = stops[stops.length - 1];
+    for (let s = 0; s < stops.length - 1; s++) {
+        if (t >= stops[s][0] && t <= stops[s + 1][0]) {
+            lo = stops[s]; hi = stops[s + 1]; break;
+        }
+    }
+    const f = hi[0] === lo[0] ? 1 : (t - lo[0]) / (hi[0] - lo[0]);
+    const r = Math.round(lo[1][0] + (hi[1][0] - lo[1][0]) * f);
+    const g = Math.round(lo[1][1] + (hi[1][1] - lo[1][1]) * f);
+    const b = Math.round(lo[1][2] + (hi[1][2] - lo[1][2]) * f);
+    return `rgb(${r},${g},${b})`;
+}
+
+function populateSelect(id, items, labelFn) {
+    const sel = qs('#' + id);
+    items.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v;
+        o.textContent = labelFn ? labelFn(v) : v;
+        sel.appendChild(o);
+    });
+}
+
+function validateDates(fromId, toId) {
+    const f = qs('#' + fromId).value, t = qs('#' + toId).value;
+    if (f && t && f > t) {
+        alert('Дата «с» не может быть позже даты «по»');
+        return false;
+    }
+    return true;
+}
+
+// ═══════════════════════════════════════════════════
+// Роутер
+// ═══════════════════════════════════════════════════
+const pageInits = {};
+let pageLoaded = { home: true, data: false, dashboard: false, report: false };
+
+function navigateTo(hash) {
+    const routes = { '': 'home', home: 'home', data: 'data', dashboard: 'dashboard', report: 'report' };
+    const page = routes[hash] || 'home';
+    qsa('.page').forEach(p => p.classList.remove('active'));
+    qs('#page-' + page).classList.add('active');
+    qsa('.nav-link').forEach(l => l.classList.remove('active'));
+    const active = qs(`.nav-link[data-page="${page}"]`);
+    if (active) active.classList.add('active');
+    if (!pageLoaded[page] && pageInits[page]) {
+        pageLoaded[page] = true;
+        pageInits[page]();
+    }
+}
+
+window.addEventListener('hashchange', () => navigateTo(location.hash.slice(1)));
+
+// ═══════════════════════════════════════════════════
+// Вкладки
+// ═══════════════════════════════════════════════════
+function initTabs() {
+    qsa('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            qsa('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            qsa('.tab-content').forEach(c => c.classList.remove('active'));
+            qs('#tab-' + tab).classList.add('active');
+            if (tab === 'acts' && !actsLoaded) { actsLoaded = true; loadActs(); }
+        });
+    });
+}
+
+// ═══════════════════════════════════════════════════
+// Аналитика (#dashboard)
+// ═══════════════════════════════════════════════════
+let chartClassification = null, chartInjury = null;
+
+function getCheckedValues(id) {
+    return Array.from(qsa('#' + id + ' input:checked')).map(cb => cb.value);
+}
+
+function initCheckboxGroup(id, items, labelFn) {
+    const cols = 5;
+    const key = labelFn || (s => s);
+    const sorted = [...items].sort((a, b) => key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0);
+    const rows = Math.ceil(sorted.length / cols);
+    const tallCols = sorted.length % cols || cols; // кол-во «полных» столбцов
+    // Перестановка: column-first → row-first для CSS grid
+    const reordered = [];
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const colHeight = c < tallCols ? rows : rows - 1;
+            if (r >= colHeight) continue;
+            const idx = c < tallCols
+                ? c * rows + r
+                : tallCols * rows + (c - tallCols) * (rows - 1) + r;
+            reordered.push(sorted[idx]);
+        }
+    }
+    const checks = reordered.map(v =>
+        `<label title="${v}"><input type="checkbox" value="${v}" checked> ${labelFn ? labelFn(v) : v}</label>`
+    ).join('');
+    const container = qs('#' + id);
+    container.innerHTML =
+        `<div class="cb-items">${checks}</div>` +
+        `<div class="cb-toggle">` +
+        `<button type="button" onclick="toggleAll('${id}',true)">Выбрать все</button>` +
+        `<button type="button" onclick="toggleAll('${id}',false)">Снять все</button>` +
+        `</div>`;
+}
+
+function toggleAll(id, state) {
+    qsa('#' + id + ' input[type=checkbox]').forEach(cb => cb.checked = state);
+}
+
+function buildDashParams() {
+    const p = new URLSearchParams();
+    const df = qs('#df-date-from').value, dt = qs('#df-date-to').value;
+    if (df) p.set('date_from', df);
+    if (dt) p.set('date_to', dt);
+
+    const st = qs('#df-status').value;
+    if (st) p.set('investigation_status', st);
+
+    const ir = qs('#df-results').value;
+    if (ir) p.set('investigation_results', ir);
+
+    const selCompanies = getCheckedValues('df-company');
+    if (selCompanies.length < COMPANIES.length) {
+        selCompanies.forEach(c => p.append('companies', c));
+    }
+
+    const selRegions = getCheckedValues('df-region');
+    if (selRegions.length < REGIONS.length) {
+        selRegions.forEach(r => p.append('regions', r));
+    }
+
+    return p;
+}
+
+function renderKPI(data) {
+    qs('#kpi-total').textContent = data.total_incidents ?? 0;
+    qs('#kpi-victims').textContent = data.total_victims ?? 0;
+    qs('#kpi-fatalities').textContent = data.total_fatalities ?? 0;
+}
+
+function renderPieChart(canvasId, dataMap, colors, existing) {
+    if (typeof Chart === 'undefined') return null;
+    if (existing) existing.destroy();
+    const entries = Object.entries(dataMap || {}).filter(([,v]) => v > 0);
+    if (!entries.length) {
+        const ctx = qs('#' + canvasId).getContext('2d');
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.font = '14px sans-serif'; ctx.fillStyle = '#999'; ctx.textAlign = 'center';
+        ctx.fillText('Нет данных', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        return null;
+    }
+    return new Chart(qs('#' + canvasId), {
+        type: 'doughnut',
+        data: {
+            labels: entries.map(([k]) => shortLabel(k, 35)),
+            datasets: [{
+                data: entries.map(([,v]) => v),
+                backgroundColor: colors.slice(0, entries.length),
+                borderWidth: 1, borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 14, padding: 8 } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                            return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderMap(byRegion) {
+    const svg = qs('#kz-map');
+    const regionEntries = Object.entries(byRegion || {});
+    const maxCount = Math.max(0, ...regionEntries.map(([,v]) => v));
+
+    svg.querySelectorAll('path[data-region]').forEach(el => {
+        const name = el.dataset.region;
+        const count = byRegion[name] || 0;
+        el.setAttribute('fill', heatColor(count, maxCount));
+    });
+
+    // Шкала тепловой карты
+    const scaleBar = qs('#map-scale-bar');
+    if (maxCount > 0) {
+        scaleBar.style.display = 'block';
+        qs('#map-scale-max').textContent = maxCount;
+    } else {
+        scaleBar.style.display = 'none';
+    }
+}
+
+function initMapTooltip() {
+    const tooltip = qs('#map-tooltip');
+    const svg = qs('#kz-map');
+    svg.querySelectorAll('path[data-region], circle[data-region]').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            tooltip.textContent = el.dataset.region + ': ' + (el._count ?? 0);
+            tooltip.style.display = 'block';
+        });
+        el.addEventListener('mousemove', e => {
+            tooltip.style.left = (e.clientX + 12) + 'px';
+            tooltip.style.top = (e.clientY - 30) + 'px';
+        });
+        el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    });
+}
+
+function updateMapCounts(byRegion) {
+    const svg = qs('#kz-map');
+    svg.querySelectorAll('[data-region]').forEach(el => {
+        el._count = byRegion[el.dataset.region] || 0;
+    });
+}
+
+async function loadDashboard() {
+    const noCompanies = getCheckedValues('df-company').length === 0;
+    const noRegions = getCheckedValues('df-region').length === 0;
+    if (noCompanies || noRegions) {
+        const empty = {total_incidents:0, total_victims:0, total_fatalities:0,
+            by_classification:{}, by_injury_type:{}, by_region:{}, by_company:{}, by_month:{}};
+        renderKPI(empty);
+        chartClassification = renderPieChart('chart-classification', {}, COLORS_9, chartClassification);
+        chartInjury = renderPieChart('chart-injury', {}, COLORS_3, chartInjury);
+        renderMap({});
+        updateMapCounts({});
+        return;
+    }
+    try {
+        const params = buildDashParams();
+        const data = await fetchJSON('/analytics/summary', params);
+        renderKPI(data);
+        chartClassification = renderPieChart('chart-classification', data.by_classification, COLORS_9, chartClassification);
+        chartInjury = renderPieChart('chart-injury', data.by_injury_type, COLORS_3, chartInjury);
+        renderMap(data.by_region);
+        updateMapCounts(data.by_region);
+    } catch (e) {
+        console.error('Dashboard load error:', e);
+        qs('#kpi-total').textContent = '!';
+        qs('#kpi-victims').textContent = '!';
+        qs('#kpi-fatalities').textContent = '!';
+    }
+}
+
+function applyDashFilters() {
+    if (!validateDates('df-date-from', 'df-date-to')) return;
+    loadDashboard();
+}
+
+function resetDashFilters() {
+    qs('#df-date-from').value = '';
+    qs('#df-date-to').value = '';
+    qs('#df-status').value = '';
+    qs('#df-results').value = '';
+    qsa('#df-company input').forEach(cb => cb.checked = true);
+    qsa('#df-region input').forEach(cb => cb.checked = true);
+    loadDashboard();
+}
+
+pageInits.dashboard = () => {
+    initCheckboxGroup('df-company', COMPANIES, c => shortLabel(c, 30));
+    initCheckboxGroup('df-region', REGIONS, r => r.replace(' область', ''));
+    initMapTooltip();
+    loadDashboard();
+};
+
+// ═══════════════════════════════════════════════════
+// Данные: Журналы
+// ═══════════════════════════════════════════════════
+let jOffset = 0, jTotal = 0;
+
+function buildJournalParams() {
+    const p = new URLSearchParams();
+    const df = qs('#jf-date-from').value, dt = qs('#jf-date-to').value;
+    if (df) p.set('date_from', df);
+    if (dt) p.set('date_to', dt);
+
+    const st = qs('#jf-status').value;
+    if (st) p.set('investigation_status', st);
+
+    const ir = qs('#jf-results').value;
+    if (ir) p.set('investigation_results', ir);
+
+    const selCompanies = getCheckedValues('jf-company');
+    if (selCompanies.length < COMPANIES.length) {
+        selCompanies.forEach(c => p.append('companies', c));
+    }
+
+    const selRegions = getCheckedValues('jf-region');
+    if (selRegions.length < REGIONS.length) {
+        selRegions.forEach(r => p.append('regions', r));
+    }
+
+    return p;
+}
+
+function renderJournalTable(items) {
+    const tbody = qs('#j-tbody');
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="no-data">Нет данных</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(i => `<tr>
+        <td>${formatDate(i.incident_date)}</td>
+        <td title="${i.company || ''}">${truncate(shortLabel(i.company, 25), 25)}</td>
+        <td title="${i.region || ''}">${truncate((i.region || '').replace(' область',''), 22)}</td>
+        <td title="${i.classification || ''}">${truncate(i.classification, 35)}</td>
+        <td title="${i.dzo || ''}">${truncate(i.dzo, 25) || '\u2014'}</td>
+        <td>${i.injury_type || '\u2014'}</td>
+        <td>${i.investigation_status || '\u2014'}</td>
+    </tr>`).join('');
+}
+
+function updateJournalPagination() {
+    const totalPages = Math.max(1, Math.ceil(jTotal / PAGE_SIZE));
+    const curPage = Math.floor(jOffset / PAGE_SIZE) + 1;
+    qs('#j-page-info').textContent = `${curPage} / ${totalPages}`;
+    qs('#j-btn-prev').disabled = jOffset === 0;
+    qs('#j-btn-next').disabled = jOffset + PAGE_SIZE >= jTotal;
+    qs('#j-table-total').textContent = `Всего: ${jTotal}`;
+}
+
+async function loadJournals() {
+    const noCompanies = getCheckedValues('jf-company').length === 0;
+    const noRegions = getCheckedValues('jf-region').length === 0;
+    if (noCompanies || noRegions) {
+        jTotal = 0;
+        renderJournalTable([]);
+        updateJournalPagination();
+        return;
+    }
+    try {
+        const params = buildJournalParams();
+        params.set('limit', PAGE_SIZE);
+        params.set('offset', jOffset);
+        const data = await fetchJSON('/incidents/', params);
+        jTotal = data.total ?? 0;
+        renderJournalTable(data.items);
+        updateJournalPagination();
+    } catch (e) {
+        console.error('Journals load error:', e);
+        qs('#j-tbody').innerHTML = '<tr><td colspan="7" class="error-msg">Ошибка загрузки данных</td></tr>';
+    }
+}
+
+function applyJournalFilters() {
+    if (!validateDates('jf-date-from', 'jf-date-to')) return;
+    jOffset = 0;
+    loadJournals();
+}
+function resetJournalFilters() {
+    qs('#jf-date-from').value = '';
+    qs('#jf-date-to').value = '';
+    qs('#jf-status').value = '';
+    qs('#jf-results').value = '';
+    qsa('#jf-company input').forEach(cb => cb.checked = true);
+    qsa('#jf-region input').forEach(cb => cb.checked = true);
+    jOffset = 0;
+    loadJournals();
+}
+function journalPrevPage() { jOffset = Math.max(0, jOffset - PAGE_SIZE); loadJournals(); }
+function journalNextPage() { jOffset += PAGE_SIZE; loadJournals(); }
+
+// ═══════════════════════════════════════════════════
+// Данные: Акты
+// ═══════════════════════════════════════════════════
+let aOffset = 0, aTotal = 0, actsLoaded = false;
+
+function buildActParams() {
+    const p = new URLSearchParams();
+    const df = qs('#af-date-from').value, dt = qs('#af-date-to').value;
+    const at = qs('#af-act-type').value;
+    if (df) p.set('date_from', df);
+    if (dt) p.set('date_to', dt);
+    if (at) p.set('act_type', at);
+
+    const selCompanies = getCheckedValues('af-company');
+    if (selCompanies.length < COMPANIES.length) {
+        selCompanies.forEach(c => p.append('companies', c));
+    }
+
+    const selRegions = getCheckedValues('af-region');
+    if (selRegions.length < REGIONS.length) {
+        selRegions.forEach(r => p.append('regions', r));
+    }
+
+    return p;
+}
+
+function renderActTable(items) {
+    const tbody = qs('#a-tbody');
+    if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="no-data">Нет данных</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(a => `<tr>
+        <td>${formatDate(a.act_date)}</td>
+        <td title="${a.company_name || ''}">${truncate(shortLabel(a.company_name, 25), 25)}</td>
+        <td title="${a.region_from_act || ''}">${truncate((a.region_from_act || '\u2014').replace(' область',''), 22)}</td>
+        <td>${a.victim_name || '\u2014'}</td>
+        <td>${a.act_type || '\u2014'}</td>
+        <td>${(a.language || 'ru').toUpperCase()}</td>
+    </tr>`).join('');
+}
+
+function updateActPagination() {
+    const totalPages = Math.max(1, Math.ceil(aTotal / PAGE_SIZE));
+    const curPage = Math.floor(aOffset / PAGE_SIZE) + 1;
+    qs('#a-page-info').textContent = `${curPage} / ${totalPages}`;
+    qs('#a-btn-prev').disabled = aOffset === 0;
+    qs('#a-btn-next').disabled = aOffset + PAGE_SIZE >= aTotal;
+    qs('#a-table-total').textContent = `Всего: ${aTotal}`;
+}
+
+async function loadActs() {
+    const noCompanies = getCheckedValues('af-company').length === 0;
+    const noRegions = getCheckedValues('af-region').length === 0;
+    if (noCompanies || noRegions) {
+        aTotal = 0;
+        renderActTable([]);
+        updateActPagination();
+        return;
+    }
+    try {
+        const params = buildActParams();
+        params.set('limit', PAGE_SIZE);
+        params.set('offset', aOffset);
+        const data = await fetchJSON('/acts/', params);
+        aTotal = data.total ?? 0;
+        renderActTable(data.items);
+        updateActPagination();
+    } catch (e) {
+        console.error('Acts load error:', e);
+        qs('#a-tbody').innerHTML = '<tr><td colspan="6" class="error-msg">Ошибка загрузки данных</td></tr>';
+    }
+}
+
+function applyActFilters() {
+    if (!validateDates('af-date-from', 'af-date-to')) return;
+    aOffset = 0;
+    loadActs();
+}
+function resetActFilters() {
+    qs('#af-date-from').value = '';
+    qs('#af-date-to').value = '';
+    qs('#af-act-type').value = '';
+    qsa('#af-company input').forEach(cb => cb.checked = true);
+    qsa('#af-region input').forEach(cb => cb.checked = true);
+    aOffset = 0;
+    loadActs();
+}
+function actPrevPage() { aOffset = Math.max(0, aOffset - PAGE_SIZE); loadActs(); }
+function actNextPage() { aOffset += PAGE_SIZE; loadActs(); }
+
+pageInits.data = () => {
+    initCheckboxGroup('jf-company', COMPANIES, c => shortLabel(c, 30));
+    initCheckboxGroup('jf-region', REGIONS, r => r.replace(' область', ''));
+    populateSelect('af-act-type', ACT_TYPES);
+    initCheckboxGroup('af-company', COMPANIES, c => shortLabel(c, 30));
+    initCheckboxGroup('af-region', REGIONS, r => r.replace(' область', ''));
+    initTabs();
+    loadJournals();
+};
+
+// ═══════════════════════════════════════════════════
+// Загрузка файлов
+// ═══════════════════════════════════════════════════
+function showModal(title) {
+    qs('#modal-title').textContent = title;
+    qs('#modal-progress').style.display = 'block';
+    qs('#modal-progress-fill').style.width = '0%';
+    qs('#modal-status').textContent = 'Подготовка...';
+    qs('#modal-results').style.display = 'none';
+    qs('#modal-results').innerHTML = '';
+    qs('#modal-close').style.display = 'none';
+    qs('#modal-overlay').classList.add('active');
+}
+
+function updateModalProgress(current, total, text) {
+    const pct = total > 0 ? (current / total * 100) : 0;
+    qs('#modal-progress-fill').style.width = pct + '%';
+    qs('#modal-status').textContent = text || `Загружено ${current} из ${total} файлов...`;
+}
+
+function showModalResults(html) {
+    qs('#modal-progress').style.display = 'none';
+    qs('#modal-results').style.display = 'block';
+    qs('#modal-results').innerHTML = html;
+    qs('#modal-close').style.display = 'inline-block';
+}
+
+function closeModal() {
+    qs('#modal-overlay').classList.remove('active');
+}
+
+async function uploadSingleFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const resp = await fetch(`${API_BASE}/files/upload`, { method: 'POST', body: formData });
+    if (!resp.ok) throw new Error(`Ошибка загрузки: ${resp.status}`);
+    return resp.json();
+}
+
+async function uploadJournals(fileList) {
+    if (!fileList || !fileList.length) return;
+    const files = Array.from(fileList);
+
+    // Проверка размера
+    const tooBig = files.filter(f => f.size > MAX_FILE_SIZE);
+    if (tooBig.length) {
+        alert(`Файлы превышают 50 МБ: ${tooBig.map(f => f.name).join(', ')}`);
+        qs('#journal-file-input').value = '';
+        return;
+    }
+
+    showModal('Загрузка журналов');
+    const fileIds = [];
+    const uploadErrors = [];
+
+    // Шаг 1: загрузка файлов на сервер
+    for (let i = 0; i < files.length; i++) {
+        updateModalProgress(i, files.length, `Загрузка файла ${i + 1} из ${files.length}...`);
+        try {
+            const result = await uploadSingleFile(files[i]);
+            fileIds.push(result.file_id);
+        } catch (e) {
+            uploadErrors.push({ name: files[i].name, error: e.message });
+        }
+    }
+    updateModalProgress(files.length, files.length, 'Обработка...');
+
+    // Шаг 2: пакетный импорт
+    let batchResult = null;
+    if (fileIds.length > 0) {
+        try {
+            const resp = await fetch(`${API_BASE}/incidents/import/journal/batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file_ids: fileIds })
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            batchResult = await resp.json();
+        } catch (e) {
+            uploadErrors.push({ name: 'Пакетный импорт', error: e.message });
+        }
+    }
+
+    // Результаты
+    let html = '';
+    if (batchResult) {
+        html += `<div class="modal-summary">
+            <span>Файлов: <strong>${batchResult.total_files}</strong></span>
+            <span>Успешно: <strong>${batchResult.successful_files}</strong></span>
+            <span>Ошибок: <strong>${batchResult.failed_files}</strong></span>
+        </div>`;
+        html += (batchResult.files || []).map(f => `<div class="modal-result-item">
+            <span>${f.file_id}</span>
+            <span>${f.error
+                ? '<span class="fail">' + f.error + '</span>'
+                : '<span class="ok">+' + f.created + ' / ~' + f.updated + '</span>'
+            }</span>
+        </div>`).join('');
+    }
+    uploadErrors.forEach(e => {
+        html += `<div class="modal-result-item"><span>${e.name}</span><span class="fail">${e.error}</span></div>`;
+    });
+    if (!html) html = '<div style="padding:1rem;color:#666;">Нет результатов</div>';
+
+    showModalResults(html);
+    qs('#journal-file-input').value = '';
+    loadJournals();
+}
+
+async function uploadActs(fileList) {
+    if (!fileList || !fileList.length) return;
+    const files = Array.from(fileList);
+
+    const tooBig = files.filter(f => f.size > MAX_FILE_SIZE);
+    if (tooBig.length) {
+        alert(`Файлы превышают 50 МБ: ${tooBig.map(f => f.name).join(', ')}`);
+        qs('#act-file-input').value = '';
+        return;
+    }
+
+    showModal('Загрузка актов');
+    const fileIds = [];
+    const uploadErrors = [];
+
+    for (let i = 0; i < files.length; i++) {
+        updateModalProgress(i, files.length, `Загрузка файла ${i + 1} из ${files.length}...`);
+        try {
+            const result = await uploadSingleFile(files[i]);
+            fileIds.push(result.file_id);
+        } catch (e) {
+            uploadErrors.push({ name: files[i].name, error: e.message });
+        }
+    }
+    updateModalProgress(files.length, files.length, 'Обработка...');
+
+    let batchResult = null;
+    if (fileIds.length > 0) {
+        try {
+            const resp = await fetch(`${API_BASE}/acts/upload/batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ file_ids: fileIds })
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            batchResult = await resp.json();
+        } catch (e) {
+            uploadErrors.push({ name: 'Пакетная загрузка', error: e.message });
+        }
+    }
+
+    let html = '';
+    if (batchResult) {
+        html += `<div class="modal-summary">
+            <span>Файлов: <strong>${batchResult.total_files}</strong></span>
+            <span>Успешно: <strong>${batchResult.successful}</strong></span>
+            <span>Ошибок: <strong>${batchResult.failed}</strong></span>
+        </div>`;
+        html += (batchResult.results || []).map(r => `<div class="modal-result-item">
+            <span>${r.act ? (r.act.original_filename || r.file_id) : r.file_id}</span>
+            <span>${r.error
+                ? '<span class="fail">' + r.error + '</span>'
+                : '<span class="ok">OK</span>'
+            }</span>
+        </div>`).join('');
+    }
+    uploadErrors.forEach(e => {
+        html += `<div class="modal-result-item"><span>${e.name}</span><span class="fail">${e.error}</span></div>`;
+    });
+    if (!html) html = '<div style="padding:1rem;color:#666;">Нет результатов</div>';
+
+    showModalResults(html);
+    qs('#act-file-input').value = '';
+    loadActs();
+}
+
+// ═══════════════════════════════════════════════════
+// Отчёт (#report)
+// ═══════════════════════════════════════════════════
+let currentReportMd = '';
+let currentReportHtml = '';
+let currentReportData = null;
+
+function initReportCompanies() {
+    initCheckboxGroup('report-companies', COMPANIES, c => shortLabel(c, 30));
+    initCheckboxGroup('report-regions', REGIONS, r => r.replace(' область', ''));
+}
+
+function getSelectedCompanies() {
+    return getCheckedValues('report-companies');
+}
+
+function getSelectedReportRegions() {
+    return getCheckedValues('report-regions');
+}
+
+async function generateReport() {
+    if (!validateDates('rf-date-from', 'rf-date-to')) return;
+
+    const preview = qs('#report-preview');
+    preview.innerHTML = '<div class="loading">Загрузка данных...</div>';
+    qs('#report-actions').style.display = 'none';
+
+    try {
+        const params = new URLSearchParams();
+        const df = qs('#rf-date-from').value, dt = qs('#rf-date-to').value;
+        if (df) params.set('date_from', df);
+        if (dt) params.set('date_to', dt);
+
+        const data = await fetchJSON('/analytics/summary', params);
+        const selectedCompanies = getSelectedCompanies();
+
+        // Формирование периода
+        let period = 'за весь период';
+        if (df && dt) period = `за период ${formatDate(df)} \u2014 ${formatDate(dt)}`;
+        else if (df) period = `с ${formatDate(df)}`;
+        else if (dt) period = `по ${formatDate(dt)}`;
+
+        // Markdown-отчёт
+        let md = `# Отчёт по происшествиям ${period}\n\n`;
+        md += `## Общая статистика\n\n`;
+        md += `- Всего происшествий: **${data.total_incidents}**\n`;
+        md += `- Пострадавших: **${data.total_victims}**\n`;
+        md += `- Погибших: **${data.total_fatalities}**\n\n`;
+
+        md += `## По виду происшествия\n\n`;
+        for (const [k, v] of Object.entries(data.by_classification || {})) {
+            if (v > 0) md += `- ${k}: ${v}\n`;
+        }
+        md += '\n';
+
+        md += `## По типу травмы\n\n`;
+        for (const [k, v] of Object.entries(data.by_injury_type || {})) {
+            if (v > 0) md += `- ${k}: ${v}\n`;
+        }
+        md += '\n';
+
+        md += `## По регионам\n\n`;
+        const selectedRegions = getSelectedReportRegions();
+        const regionsSorted = Object.entries(data.by_region || {})
+            .filter(([k, v]) => v > 0 && selectedRegions.includes(k))
+            .sort((a, b) => b[1] - a[1]);
+        for (const [k, v] of regionsSorted) {
+            md += `- ${k}: ${v}\n`;
+        }
+        md += '\n';
+
+        md += `## По компаниям\n\n`;
+        const companySorted = Object.entries(data.by_company || {})
+            .filter(([k, v]) => v > 0 && selectedCompanies.includes(k))
+            .sort((a, b) => b[1] - a[1]);
+        for (const [k, v] of companySorted) {
+            md += `- ${k}: ${v}\n`;
+        }
+        md += '\n';
+
+        md += `## Помесячная динамика\n\n`;
+        const monthsSorted = Object.entries(data.by_month || {}).sort((a, b) => a[0].localeCompare(b[0]));
+        for (const [k, v] of monthsSorted) {
+            if (v > 0) md += `- ${formatMonth(k)}: ${v}\n`;
+        }
+
+        currentReportMd = md;
+
+        // Рендер в HTML
+        if (typeof marked !== 'undefined') {
+            currentReportHtml = marked.parse(md);
+            preview.innerHTML = currentReportHtml;
+        } else {
+            preview.innerHTML = '<pre style="white-space:pre-wrap;font-family:inherit;">' +
+                md.replace(/</g, '&lt;') + '</pre>';
+            currentReportHtml = preview.innerHTML;
+        }
+
+        qs('#report-actions').style.display = 'flex';
+    } catch (e) {
+        console.error('Report error:', e);
+        preview.innerHTML = '<div class="error-msg">Ошибка загрузки данных для отчёта</div>';
+    }
+}
+
+async function exportToWord() {
+    if (!currentReportHtml) return;
+
+    // AI-отчёт → скачать настоящий DOCX с бэкенда
+    if (currentReportData) {
+        try {
+            const resp = await fetch(`${API_BASE}/analytics/report/docx`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentReportData),
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const today = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `otchet_tb_${today}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            return;
+        } catch (e) {
+            console.warn('DOCX export failed, falling back to HTML .doc:', e);
+        }
+    }
+
+    // Фоллбэк: клиентский HTML→.doc
+    const htmlContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+        xmlns:w='urn:schemas-microsoft-com:office:word'
+        xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'>
+        <style>
+            body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; }
+            h1 { font-size: 16pt; margin-bottom: 12pt; }
+            h2 { font-size: 13pt; margin-top: 18pt; margin-bottom: 8pt; }
+            ul { padding-left: 20pt; }
+            li { margin-bottom: 4pt; }
+        </style></head>
+        <body>${currentReportHtml}</body></html>`;
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const today = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `otchet_tb_${today}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function copyMarkdown() {
+    if (!currentReportMd) return;
+    navigator.clipboard.writeText(currentReportMd).then(() => {
+        const btn = qs('.report-actions .btn-outline');
+        const orig = btn.textContent;
+        btn.textContent = 'Скопировано!';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+}
+
+function resetReportFilters() {
+    qs('#rf-date-from').value = '';
+    qs('#rf-date-to').value = '';
+    qsa('#report-companies input').forEach(cb => { cb.checked = true; });
+    qsa('#report-regions input').forEach(cb => { cb.checked = true; });
+    qs('#report-preview').innerHTML = '<div class="report-placeholder">Нажмите «Сгенерировать» для создания отчёта</div>';
+    qs('#report-actions').style.display = 'none';
+    currentReportMd = '';
+    currentReportHtml = '';
+    currentReportData = null;
+}
+
+async function generateAiReport() {
+    if (!validateDates('rf-date-from', 'rf-date-to')) return;
+
+    const preview = qs('#report-preview');
+    preview.innerHTML = '<div class="loading">AI-анализ... (до 30 сек)</div>';
+    qs('#report-actions').style.display = 'none';
+
+    const body = { include_ai_analysis: true };
+    const df = qs('#rf-date-from').value, dt = qs('#rf-date-to').value;
+    if (df) body.date_from = df;
+    if (dt) body.date_to = dt;
+    const companies = getSelectedCompanies();
+    if (companies.length) body.companies = companies;
+
+    try {
+        const resp = await fetch(`${API_BASE}/analytics/report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        renderAiReport(data, preview);
+        qs('#report-actions').style.display = 'flex';
+    } catch (e) {
+        console.error('AI report error:', e);
+        preview.innerHTML = '<div class="error-msg">Ошибка генерации AI-отчёта: ' + e.message + '</div>';
+    }
+}
+
+function renderAiReport(data, container) {
+    let html = '<h1>Аналитический отчёт (AI)</h1>';
+
+    // Сводка
+    if (data.summary_narrative) {
+        html += '<h2>Сводная статистика</h2>';
+        html += '<div style="white-space:pre-line;">' + escHtml(data.summary_narrative) + '</div>';
+    }
+
+    // Ключевые выводы
+    if (data.key_findings && data.key_findings.length) {
+        html += '<h2>Ключевые выводы</h2><ul>';
+        data.key_findings.forEach(f => { html += '<li>' + escHtml(f) + '</li>'; });
+        html += '</ul>';
+    }
+
+    // Анализ причин
+    if (data.cause_analysis) {
+        html += '<h2>Анализ причин</h2>';
+        html += '<div style="white-space:pre-line;">' + escHtml(data.cause_analysis) + '</div>';
+    }
+
+    // Топ категорий причин
+    if (data.top_cause_categories && data.top_cause_categories.length) {
+        html += '<h2>Категории причин</h2><ul>';
+        data.top_cause_categories.forEach(c => {
+            html += '<li><strong>' + escHtml(c.category) + '</strong> (' + c.count + ')';
+            if (c.analysis) html += ' — ' + escHtml(c.analysis);
+            html += '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Повторяемость
+    if (data.recurrence_patterns && data.recurrence_patterns.length) {
+        html += '<h2>Паттерны повторяемости</h2><ul>';
+        data.recurrence_patterns.forEach(p => {
+            html += '<li>' + escHtml(p.pattern_description);
+            if (p.affected_companies && p.affected_companies.length) {
+                html += ' (' + p.affected_companies.map(escHtml).join(', ') + ')';
+            }
+            html += '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Оценка рисков
+    if (data.risk_assessment && data.risk_assessment.length) {
+        html += '<h2>Оценка рисков</h2>';
+        if (data.overall_risk_level) {
+            html += '<p><strong>Общий уровень:</strong> ' + escHtml(data.overall_risk_level) + '</p>';
+        }
+        html += '<ul>';
+        data.risk_assessment.forEach(r => {
+            html += '<li><strong>' + escHtml(r.risk_type) + '</strong> [' + escHtml(r.severity) + '] — ' + escHtml(r.description) + '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Рекомендации
+    if (data.recommendations && data.recommendations.length) {
+        html += '<h2>Рекомендации</h2><ul>';
+        data.recommendations.forEach(r => {
+            html += '<li><strong>[' + escHtml(r.priority) + ']</strong> ' + escHtml(r.recommendation);
+            if (r.rationale) html += '<br><em>' + escHtml(r.rationale) + '</em>';
+            html += '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Первоочередные действия
+    if (data.immediate_actions && data.immediate_actions.length) {
+        html += '<h2>Первоочередные действия</h2><ol>';
+        data.immediate_actions.forEach(a => { html += '<li>' + escHtml(a) + '</li>'; });
+        html += '</ol>';
+    }
+
+    // Примечание
+    if (data.confidence_note) {
+        html += '<p style="color:#666;font-style:italic;margin-top:1rem;">' + escHtml(data.confidence_note) + '</p>';
+    }
+
+    container.innerHTML = html;
+    currentReportHtml = html;
+    currentReportData = data;
+
+    // Markdown-версия для копирования
+    let md = '# Аналитический отчёт (AI)\n\n';
+    if (data.summary_narrative) md += '## Сводная статистика\n\n' + data.summary_narrative + '\n\n';
+    if (data.key_findings && data.key_findings.length) {
+        md += '## Ключевые выводы\n\n';
+        data.key_findings.forEach(f => { md += '- ' + f + '\n'; });
+        md += '\n';
+    }
+    if (data.cause_analysis) md += '## Анализ причин\n\n' + data.cause_analysis + '\n\n';
+    if (data.top_cause_categories && data.top_cause_categories.length) {
+        md += '## Категории причин\n\n';
+        data.top_cause_categories.forEach(c => {
+            md += '- **' + c.category + '** (' + c.count + ')';
+            if (c.analysis) md += ' — ' + c.analysis;
+            md += '\n';
+        });
+        md += '\n';
+    }
+    if (data.recurrence_patterns && data.recurrence_patterns.length) {
+        md += '## Паттерны повторяемости\n\n';
+        data.recurrence_patterns.forEach(p => {
+            md += '- ' + p.pattern_description;
+            if (p.affected_companies && p.affected_companies.length) {
+                md += ' (' + p.affected_companies.join(', ') + ')';
+            }
+            md += '\n';
+        });
+        md += '\n';
+    }
+    if (data.risk_assessment && data.risk_assessment.length) {
+        md += '## Оценка рисков\n\nОбщий уровень: **' + (data.overall_risk_level || '-') + '**\n\n';
+        data.risk_assessment.forEach(r => { md += '- **' + r.risk_type + '** [' + r.severity + '] — ' + r.description + '\n'; });
+        md += '\n';
+    }
+    if (data.recommendations && data.recommendations.length) {
+        md += '## Рекомендации\n\n';
+        data.recommendations.forEach(r => { md += '- [' + r.priority + '] ' + r.recommendation + '\n'; });
+        md += '\n';
+    }
+    if (data.immediate_actions && data.immediate_actions.length) {
+        md += '## Первоочередные действия\n\n';
+        data.immediate_actions.forEach((a, i) => { md += (i + 1) + '. ' + a + '\n'; });
+        md += '\n';
+    }
+    if (data.confidence_note) {
+        md += '---\n\n*' + data.confidence_note + '*\n';
+    }
+    currentReportMd = md;
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+pageInits.report = () => {
+    initReportCompanies();
+};
+
+// ═══════════════════════════════════════════════════
+// Инициализация
+// ═══════════════════════════════════════════════════
+navigateTo(location.hash.slice(1));
+</script>
+
+</body>
+</html>
